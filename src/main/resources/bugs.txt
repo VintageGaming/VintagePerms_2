@@ -1,0 +1,25 @@
+Next Update:
+--------------------------------------------------------------------------------------------------------------
+
+Implement per-world permissions
+
+Add Online/Offline Players Menu to Users GUI
+
+
+
+
+
+
+Update Notes:
+--------------------------------------------------------------------------------------------------------------
+Optimization Tweaks
+
+Added Parents Option for the group command
+/vperms group <group> parents add <group> - Add a group to inherit permissions from
+/vperms group <group> parents add <group, group, group> or <group,group,group> or <group group group> - Add multiple groups to inherit permissions from
+/vperms group <group> parents remove <group> Remove an Inherited Group
+/vperms group <group> parents list
+
+Added GUI Option for User Command
+/vperms user <player> gui - Opens User Editor
+

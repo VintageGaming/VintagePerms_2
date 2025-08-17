@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="VintagePerms:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/VintagePerms_jar</output-path>
+    <root id="archive" name="VintagePerms.jar">
+      <element id="module-output" name="VintagePerms" />
+      <element id="file-copy" path="$PROJECT_DIR$/src/main/resources/plugin.yml" />
+    </root>
+  </artifact>
+</component>
