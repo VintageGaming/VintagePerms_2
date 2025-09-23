@@ -26,17 +26,20 @@ public class UserUI implements Listener {
         if (e.getClickedInventory() == null || e.getCurrentItem() == null || e.getCurrentItem().getType() == Material.AIR) return;
 
         InventoryHolder holder = e.getClickedInventory().getHolder();
-        if (!(holder instanceof PaginatedGuiHolder) && !e.getView().getTitle().contains("Vintage Perms") && !e.getView().getTitle().contains("Player") && !e.getView().getTitle().contains("Plugin")) return;
+        if (!(holder instanceof PaginatedGuiHolder)) return;
 
         e.setCancelled(true);
 
         PaginatedGuiHolder paginatedGuiHolder = (PaginatedGuiHolder) holder;
-        Map<String, String> info = new HashMap<>();
 
         Player p = (Player) e.getWhoClicked();
         ItemStack clicked = e.getCurrentItem();
         SettingsManager manager = SettingsManager.getInstance();
-        Users user = paginatedGuiHolder.getInfo().get("player_name") != null ? manager.getUser(paginatedGuiHolder.getInfo().get("player_name")) : null;
+        Map<String, String> infoMap = paginatedGuiHolder.getInfo();
+        Users user = null;
+
+        if (infoMap != null && infoMap.containsKey("player_name"))
+            user = manager.getUser(paginatedGuiHolder.getInfo().get("player_name"));
 
         if (e.getView().getTitle().equalsIgnoreCase("Vintage Perms > Users")) {
             //Users Gui Options: Main Menu will Display All Online Players. Then you choose to Change User's Group, add Plugin Permissions

@@ -3,6 +3,7 @@ package com.VintageGaming.VintagePerms.Commands;
 import com.VintageGaming.VintagePerms.Management.Groups;
 import com.VintageGaming.VintagePerms.PermsMain;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
@@ -10,6 +11,7 @@ import org.bukkit.permissions.Permission;
 import com.VintageGaming.VintagePerms.SettingsManager;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class GroupCmd extends PermsCommand {
 
@@ -48,45 +50,46 @@ public class GroupCmd extends PermsCommand {
                     for (int g=0;g<amount;g++) {
                         sender.sendMessage(ChatColor.GOLD + String.valueOf(g+1) + ChatColor.YELLOW + ". " + SettingsManager.groups.get(g).getName());
                     }
-
                 }
             }
-
             else
                 sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
 
             return;
         }
 
-        String g = args[0].toLowerCase();
+        String groupName = args[0].toLowerCase();
+        Groups group = SettingsManager.getGroup(groupName);
 
+        //Group Doesn't Exist and Create Action isn't being Used
+        if (group == null && args.length < 2) {
+            sender.sendMessage(ChatColor.RED + "Group doesn't exist!");
+            return;
+        }
+
+        //List Group Info
         if (args.length < 2) {
-            if (SettingsManager.getGroup(g.toLowerCase()) != null && (sender.hasPermission("vperms.groups.listperms") || !(sender instanceof Player) || sender.hasPermission("vperms.groups.*") || sender.hasPermission("vperms.*"))) {
+            if (CommandPermission.GROUP_LIST_PERMS.hasForGroup(sender, groupName)) {
 
-                if (!SettingsManager.getGroupNames().contains(g)) {
-                    sender.sendMessage(ChatColor.RED + "Group doesn't exist!");
-                    return;
-                }
+                boolean isDefault = false;
 
-                Boolean isDefault = false;
-
-                if (SettingsManager.getInstance().getGroupSection(g.toLowerCase()).getBoolean("default"))
+                if (SettingsManager.getInstance().getGroupSection(groupName).getBoolean("default"))
                     isDefault = true;
 
-                if (SettingsManager.getGroup(g.toLowerCase()).getPerms().size() == 0) {
-                    sender.sendMessage(ChatColor.GOLD + "<" + ChatColor.AQUA + "Group: " + g.toLowerCase() + ChatColor.GOLD + ">");
+                if (group.getPerms().isEmpty()) {
+                    sender.sendMessage(ChatColor.GOLD + "<" + ChatColor.AQUA + "Group: " + groupName + ChatColor.GOLD + ">");
                     sender.sendMessage(ChatColor.GOLD + "Default: " + ChatColor.RESET + isDefault);
-                    sender.sendMessage(ChatColor.YELLOW + "No permissions for " + g.toLowerCase());
+                    sender.sendMessage(ChatColor.YELLOW + "No permissions for " + groupName);
                     return;
                 }
 
-                sender.sendMessage(ChatColor.GOLD + "<" + ChatColor.AQUA + "Group: " + g + ChatColor.GOLD + ">");
+                sender.sendMessage(ChatColor.GOLD + "<" + ChatColor.AQUA + "Group: " + groupName + ChatColor.GOLD + ">");
                 sender.sendMessage(ChatColor.GOLD + "Default: " + ChatColor.RESET + isDefault);
                 sender.sendMessage(ChatColor.GOLD + "<" + ChatColor.AQUA + "Permissions:" + ChatColor.GOLD + ">");
 
                 int perms = 0;
 
-                for (String perm : SettingsManager.getGroup(g).getPerms()) {
+                for (String perm : group.getPerms()) {
                     perms += 1;
 
                     sender.sendMessage(ChatColor.GOLD + String.valueOf(perms) + ") " + ChatColor.YELLOW + perm);
@@ -97,123 +100,128 @@ public class GroupCmd extends PermsCommand {
                 return;
             }
         }
-        else if (args.length == 2) {
-            if (args[1].equalsIgnoreCase("delete") && (sender.hasPermission("vperms.groups." + g.toLowerCase() + ".delete") || sender.hasPermission("vperms.groups.*") || sender.hasPermission("vperms.groups." + g.toLowerCase() + ".*") || sender.hasPermission("vperms.*"))) {
 
-                if (!SettingsManager.getGroupNames().contains(g)) {
-                    sender.sendMessage(ChatColor.RED + "Group doesn't exist!");
-                    return;
-                }
+        String action = args[1].toLowerCase();
 
-                for (Player player : PermsMain.instance.getServer().getOnlinePlayers()) {
-                    if (SettingsManager.getInstance().getUser(player).getGroups().contains(g)) {
-                        SettingsManager.getInstance().getUser(player).removeGroup(SettingsManager.getGroup(g));
-                    }
-                }
-
-                SettingsManager.getGroup(g).deleteGroup();
-
-
-
-
-                for (Player onlinePlayer : PermsMain.instance.getServer().getOnlinePlayers()) {
-                    SettingsManager.getInstance().getUser(onlinePlayer).removeGroup(SettingsManager.getGroup(g));
-                }
-
-                sender.sendMessage(ChatColor.GREEN + "Deleted Group " + g.toLowerCase() + ".");
-                return;
-            }
-            else if (args[1].equalsIgnoreCase("create")) {
-                if (sender.hasPermission("vperms.groups.create") || sender.hasPermission("vperms.groups.*") || sender.hasPermission("vperms.*")){
-                    SettingsManager.getInstance().createGroup(g);
-                    sender.sendMessage(ChatColor.GREEN + "Created group!");
-                    return;
-                }
-
-                else {
-                    sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
-                    return;
-                }
-            }
-        }
-
-        else if (args.length == 3) {
-            if (!SettingsManager.getGroupNames().contains(g)) {
-                sender.sendMessage(ChatColor.RED + "Group doesn't exist!");
-                return;
-            }
-
-            if (args[1].equalsIgnoreCase("add") && (sender.hasPermission("vperms.groups." + g.toLowerCase() + ".addperm") || !(sender instanceof Player) || sender.hasPermission("vperms.groups.*") || sender.hasPermission("vperms.groups." + g.toLowerCase() + ".*") || sender.hasPermission("vperms.*"))) {
-                SettingsManager.getGroup(g).addPerm(args[2].toLowerCase());
-                sender.sendMessage(ChatColor.GREEN + "Added " + args[2] + " to group " + g.toLowerCase() + ".");
-                return;
-            }
-
-            else if (args[1].equalsIgnoreCase("remove") && (sender.hasPermission("vperms.groups." + g.toLowerCase() + ".removeperm") || !(sender instanceof Player) || sender.hasPermission("vperms.groups.*") || sender.hasPermission("vperms.groups." + g.toLowerCase() + ".*") || sender.hasPermission("vperms.*"))) {
-                SettingsManager.getGroup(g).remPerm(args[2].toLowerCase());
-                sender.sendMessage(ChatColor.GREEN + "Removed " + args[2] + " from group " + g.toLowerCase() + ".");
-                return;
-            }
-
-            else if (args[1].equalsIgnoreCase("prefix") && (sender.hasPermission("vperms.groups.setprefix") || !(sender instanceof Player) || sender.hasPermission("vperms.groups.*") || sender.hasPermission("vperms.groups." + g.toLowerCase() + ".*") || sender.hasPermission("vperms.*"))) {
-                SettingsManager.getGroup(g).setPrefix(args[2]);
-
-                sender.sendMessage(ChatColor.GREEN + "Set Group Prefix!");
-                return;
-            }
-        }
-
-        else if (args.length == 4 && args[1].equalsIgnoreCase("parents")) {
-            if (!SettingsManager.getGroupNames().contains(g)) {
-                sender.sendMessage(ChatColor.RED + "Group doesn't exist!");
-                return;
-            }
-
-            if (args[2].equalsIgnoreCase("add")) {
-                String[] groups;
-
-                if (args[3].contains(",") && !args[3].contains(" ")) {
-                    groups = args[3].toLowerCase().split(",");
-                }
-
-                else {
-                    String joinedGroups = args[3].toLowerCase();
-                    if (args.length > 4) {
-                        String[] groupSpaced = Arrays.copyOfRange(args, 4, args.length);
-
-                        for (String group : groupSpaced) {
-                            if (!SettingsManager.getGroupNames().contains(group.toLowerCase())) continue;
-
-                            if (!group.contains(",")) String.join(", ", joinedGroups, group);
-                            else String.join(", ", joinedGroups, group.replace(",", ""));
+        //Group Exists - Group Actions
+        switch (action) {
+            case "delete":
+                if (CommandPermission.GROUP_DELETE.hasForGroup(sender, groupName)) {
+                    for (Player player : PermsMain.instance.getServer().getOnlinePlayers()) {
+                        if (SettingsManager.getInstance().getUser(player).getGroups().contains(groupName)) {
+                            SettingsManager.getInstance().getUser(player).removeGroup(groupName);
                         }
                     }
-                    groups = joinedGroups.split(", ");
-                }
-                for (String group : groups) {
-                    if (!SettingsManager.getGroupNames().contains(group.toLowerCase())) continue;
-                    SettingsManager.getGroup(g).addInheritance(group.toLowerCase());
-                }
-            }
-            else if (args[2].equalsIgnoreCase("remove")) {
-                if (!SettingsManager.getGroupNames().contains(args[3].toLowerCase())) return;
-                SettingsManager.getGroup(g).removeInheritance(args[3].toLowerCase());
-            }
 
-        }
-        else if (args[1].equalsIgnoreCase("parents") && args[2].equalsIgnoreCase("list")) {
-            if (!SettingsManager.getGroupNames().contains(g)) {
-                sender.sendMessage(ChatColor.RED + "Group doesn't exist!");
+                    group.deleteGroup();
+
+                    for (Player onlinePlayer : PermsMain.instance.getServer().getOnlinePlayers()) {
+                        SettingsManager.getInstance().getUser(onlinePlayer).removeGroup(groupName);
+                    }
+
+                    sender.sendMessage(ChatColor.GREEN + "Deleted Group " + groupName + ".");
+                }
+                else {
+                    sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
+                }
                 return;
-            }
-            sender.sendMessage(ChatColor.GOLD + "<" + ChatColor.AQUA + "Group: " + ChatColor.WHITE + g + ChatColor.AQUA + " Parents>");
-            for (Groups group : SettingsManager.groups.values()) {
-                sender.sendMessage(ChatColor.GOLD + group.getName());
-            }
+            case "create":
+                if (CommandPermission.GROUP_CREATE.has(sender)) {
+                    SettingsManager.getInstance().createGroup(groupName);
+                    sender.sendMessage(ChatColor.GREEN + "Created group!");
+                }
+                else {
+                    sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
+                }
+                return;
+            case "add":
+                if (CommandPermission.GROUP_ADD_PERM.hasForGroup(sender, groupName)) {
+                    group.addPerm(args[2].toLowerCase());
+                    sender.sendMessage(ChatColor.GREEN + "Added " + args[2] + " to group " + groupName + ".");
+                }
+                else {
+                    sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
+                }
+                return;
+            case "remove":
+                if (CommandPermission.GROUP_REMOVE_PERM.hasForGroup(sender, groupName)) {
+                    group.remPerm(args[2].toLowerCase());
+                    sender.sendMessage(ChatColor.GREEN + "Removed " + args[2] + " from group " + groupName + ".");
+                }
+                else {
+                    sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
+                }
+                return;
+            case "prefix":
+                if (CommandPermission.GROUP_SET_PREFIX.hasForGroup(sender, groupName)) {
+                    group.setPrefix(args[2]);
+
+                    sender.sendMessage(ChatColor.GREEN + "Set Group Prefix!");
+                }
+                else {
+                    sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
+                }
+                return;
+            case "parents":
+                if (CommandPermission.GROUP_PARENTS_MODIFY.hasForGroup(sender, groupName) || CommandPermission.GROUP_PARENTS_LIST.hasForGroup(sender, groupName)) {
+                    if (args[2].equalsIgnoreCase("add") && CommandPermission.GROUP_PARENTS_MODIFY.hasForGroup(sender, groupName)) {
+                        String[] groups;
+
+                        if (args[3].contains(",") && !args[3].contains(" ")) {
+                            groups = args[3].toLowerCase().split(",");
+                        }
+
+                        else {
+                            String joinedGroups = args[3].toLowerCase();
+                            if (args.length > 4) {
+                                String[] groupSpaced = Arrays.copyOfRange(args, 4, args.length);
+
+                                for (String g : groupSpaced) {
+                                    if (!SettingsManager.getGroupNames().contains(g.toLowerCase())) continue;
+
+                                    if (!g.contains(",")) String.join(", ", joinedGroups, g);
+                                    else String.join(", ", joinedGroups, g.replace(",", ""));
+                                }
+                            }
+                            groups = joinedGroups.split(", ");
+                        }
+                        for (String g : groups) {
+                            if (!SettingsManager.getGroupNames().contains(g.toLowerCase())) continue;
+                            group.addInheritance(g.toLowerCase());
+                        }
+                    }
+                    else if (args[2].equalsIgnoreCase("remove") && CommandPermission.GROUP_PARENTS_MODIFY.hasForGroup(sender, groupName)) {
+                        if (!SettingsManager.getGroupNames().contains(args[3].toLowerCase())) return;
+                        group.removeInheritance(args[3].toLowerCase());
+                    }
+                    else {
+                        if (CommandPermission.GROUP_PARENTS_LIST.hasForGroup(sender, groupName)) {
+                            List<String> parents = group.getInheritance();
+                            if (parents.isEmpty()) {
+                                sender.sendMessage(ChatColor.GOLD + "<" + ChatColor.AQUA + "Group: " + ChatColor.WHITE + groupName + ChatColor.AQUA + " Parents>");
+                                sender.sendMessage(ChatColor.GOLD + "No Parents");
+                                return;
+                            }
+
+                            sender.sendMessage(ChatColor.GOLD + "<" + ChatColor.AQUA + "Group: " + ChatColor.WHITE + groupName + ChatColor.AQUA + " Parents>");
+                            for (String g : parents) {
+                                sender.sendMessage(ChatColor.GOLD + g);
+                            }
+                        }
+                        else sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
+                    }
+                }
+                else {
+                    sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
+                }
+                return;
+            default:
+                sender.sendMessage(ChatColor.RED + "Invalid Action!");
+
         }
     }
 
     public GroupCmd() {
-        super("group", "<name> [<add | remove | create | delete | prefix> <perm | prefix>]");
+        super("group", "<name> [<add | remove | create | delete | parents | prefix> <perm | add | remove | prefix> <parent>]");
     }
 }

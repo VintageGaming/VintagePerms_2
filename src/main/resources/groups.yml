@@ -1,0 +1,43 @@
+# ----------------------------------------------------
+# VintagePerms groups.yml
+# ----------------------------------------------------
+
+# A basic group with no prefix and not default.
+example:
+  options:
+    default: false
+  permissions:
+    - 'essentials.kick'
+
+# The default group for new players.
+default:
+  options:
+    # 'default: true' marks this as the group for new players.
+    # Only ONE group should have this set to true.
+    default: true
+    prefix: '&a<&2Guest&a>&f' # 'prefix' is what appears before a player's name in chat.
+  permissions:
+    - 'essentials.kill'
+
+  worlds: # 'worlds' is an optional section for per-world permissions.
+    world: # The key is the exact name of the world.
+      permissions:
+        - 'essentials.back'
+    world_nether:
+      permissions:
+        - 'essentials.enderchest'
+
+# An admin-level group that inherits from other groups.
+owner:
+  options:
+    default: false
+    prefix: '[&4Owner&f]'
+  permissions:
+    - 'essentials.ban'
+    - '-essentials.gamemode' # You can also add negative permissions directly to a group.
+
+  # 'inheritance' is a list of other groups this group gets permissions from.
+  # The order does not matter.
+  inheritance:
+    - 'example'
+    - 'default'

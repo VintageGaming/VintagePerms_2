@@ -7,11 +7,11 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.scoreboard.Team;
 
 import java.io.File;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class Users {
 
@@ -55,13 +55,19 @@ public class Users {
     }
 
     public void addPermission(String permission) {
-        if (permissions.contains(permission)) return;
+        permission = permission.trim().toLowerCase();
+        if (permissions.contains(permission) || permission.isEmpty()) return;
 
-        if (permission.contains("-")) {
-            if (!permissions.contains(permission.replace("-", "")))
-                permissions.add(permission);
-            else permissions.remove(permission.replace("-", ""));
-        }
+        String oppositePerm;
+        if (permission.startsWith("-"))
+            oppositePerm = permission.substring(1);
+        else
+            oppositePerm = "-" + permission;
+
+        //Remove Opposite/Negated Permissision if it exists
+        permissions.remove(oppositePerm);
+
+        permissions.add(permission);
 
         config.set(uuid + ".permissions", permissions);
         save();
@@ -69,57 +75,60 @@ public class Users {
     }
 
     public void removePermission(String permission) {
+        permission = permission.trim().toLowerCase();
+        if (permission.isEmpty()) return;
 
-        if (permissions.contains(permission)) permissions.remove(permission);
-        else if (permission.contains("-")) permissions.add(permission);
-        else permissions.add("-" + permission);
+        String basePerm = permission.replace("-", "");
+        String negativePerm = "-" + basePerm;
+
+        boolean basePermRemoved = permissions.remove(basePerm);
+        permissions.remove(negativePerm);
+
+        if (!basePermRemoved) {
+            permissions.add(negativePerm);
+        }
 
         config.set(uuid + ".permissions", permissions);
         save();
         inject();
     }
 
-    public void addGroup(Groups group, int index) {
-        if (SettingsManager.getGroup(group.getName()) == null) return;
+    public void addGroup(String g, int index) {
+        Groups group = SettingsManager.getGroup(g);
+        if (group == null) return;
 
-        if (groups.contains(group.getName()) && index != 0) return;
-        if (groups.contains(group.getName()) && index == 0) groups.remove(group.getName());
+        groups.remove(group.getName());
+        if (index < 0 || index > groups.size()) {
+            groups.add(group.getName());
+        }
+        else {
+            groups.add(index, group.getName());
+        }
 
-        groups.add(index, group.getName());
         config.set(uuid + ".groups", groups);
         save();
         inject();
-    }
-
-    public void addGroup(String group, int index) {
-        if (SettingsManager.getGroup(group) == null)
-            addGroup(SettingsManager.getGroup(group), index);
     }
 
     public void setGroup(String group) {
         addGroup(group, 0);
     }
 
-    public void removeGroup(Groups group) {
-        groups.remove(group.getName());
-        config.set(uuid + ".groups", groups);
-        save();
-        inject();
-    }
-
     public void removeGroup(String group) {
-        removeGroup(SettingsManager.getGroup(group));
-    }
+        group = group.trim().toLowerCase();
+        if (group.isEmpty()) return;
 
-    public void removeInvalidGroup(String group) {
-        groups.remove(group);
-        config.set(uuid + ".groups", groups);
-        save();
-        inject();
+        boolean wasRemoved = groups.remove(group);
+
+        if (wasRemoved) {
+            config.set(uuid + ".groups", groups);
+            save();
+            inject();
+        }
     }
 
     public void inject() {
-        if (pl.isOnline()) return;
+        if (!pl.isOnline()) return;
 
         unInject();
 
@@ -128,41 +137,42 @@ public class Users {
         if (manager.attachments.get(name.toLowerCase()) == null)
             manager.attachments.put(name.toLowerCase(), p.addAttachment(manager.getPlugin()));
 
-        for (String group : groups) {
-            if (SettingsManager.getGroup(group) == null) removeInvalidGroup(group);
+
+        Iterator<String> iterator = groups.iterator();
+        while (iterator.hasNext()) {
+            String group = iterator.next();
+            if (SettingsManager.getGroup(group) == null) {
+                iterator.remove();
+                continue;
+            }
 
             Groups g = SettingsManager.getGroup(group);
 
-            for (String perm : g.getPerms()) {
-                if (!perm.contains("-"))
-                    manager.attachments.get(name.toLowerCase()).setPermission(perm, true);
-                else manager.attachments.get(name.toLowerCase()).unsetPermission(perm.replace("-", ""));
-            }
-            if (g.getInheritedPermissions().isEmpty()) continue;
+            //Regular  Group Permissions
+            if (!g.getPerms().isEmpty())
+                registerPermissions(g.getPerms());
 
-            for (String perm : g.getInheritedPermissions()) {
-                if (!perm.contains("-"))
-                    manager.attachments.get(name.toLowerCase()).setPermission(perm, true);
-                else manager.attachments.get(name.toLowerCase()).unsetPermission(perm.replace("-", ""));
-            }
+            //Inherited Permissions
+            if (!g.getInheritedPermissions().isEmpty())
+                registerPermissions(g.getInheritedPermissions());
+
+            //Per World Permissions
+            if (!g.getWorldPerms(p.getWorld().getName()).isEmpty())
+                registerPermissions(g.getWorldPerms(p.getWorld().getName()));
         }
 
         //Inject Extra Permissions to Player
-        for (String perm : getPermissions()) {
-            if (perm.contains("-")) {
-                manager.attachments.get(name.toLowerCase()).unsetPermission(perm.replace("-", ""));
-            } else
-                manager.attachments.get(name.toLowerCase()).setPermission(perm, true);
-        }
+        if (!getPermissions().isEmpty())
+            registerPermissions(getPermissions());
 
-        if (getGroups().isEmpty()) {
-            return;
-        }
 
-        List<String> groups = getGroups();
+        if (!getGroups().isEmpty()) {
+            String primaryGroup = getGroups().get(0);
+            Team team = PermsMain.ranks.getTeam(primaryGroup);
 
-        if (manager.getConfig().getString(groups.get(0) + ".options.prefix") != null) {
-            PermsMain.ranks.getTeam(groups.get(0)).addEntry(name);
+            if (team != null) {
+                team.addEntry(name);
+            }
         }
 
         p.setScoreboard(PermsMain.ranks);
@@ -185,6 +195,16 @@ public class Users {
         Team team = PermsMain.ranks.getEntryTeam(pl.getName());
         if (team != null) {
             team.removeEntry(pl.getName());
+        }
+    }
+
+    public void registerPermissions(List<String> perms) {
+        PermissionAttachment attachment = manager.attachments.get(name.toLowerCase());
+        for (String perm : perms) {
+            if (!perm.startsWith("-"))
+                attachment.setPermission(perm, true);
+            else
+                attachment.setPermission(perm.substring(1), false);
         }
     }
 

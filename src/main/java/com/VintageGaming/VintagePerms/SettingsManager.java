@@ -52,73 +52,15 @@ public class SettingsManager {
     public void makeConfig(Plugin p) {
         this.p = p;
 
-        if (!p.getDataFolder().exists()) p.getDataFolder().mkdir();
+        p.saveResource("groups.yml", false);
+        p.saveResource("player.yml", false);
 
         cFile = new File(p.getDataFolder(), "groups.yml");
         pFile = new File(p.getDataFolder(), "player.yml");
 
-        if (!cFile.exists()) {
-
-            try {cFile.createNewFile();}
-
-            catch(Exception e) { e.printStackTrace(); }
-
-            config = YamlConfiguration.loadConfiguration(cFile);
-
-            ArrayList<String> exampleG = new ArrayList<String>();
-            ArrayList<String> defaultG = new ArrayList<String>();
-            ArrayList<String> ownerG = new ArrayList<String>();
-            ArrayList<String> ownerI = new ArrayList<String>();
-
-            exampleG.add("essentials.kick");
-            defaultG.add("essentials.kill");
-            ownerG.add("essentials.ban");
-
-            ownerI.add("example");
-            ownerI.add("default");
-
-            config.set("example.options.default", false);
-            config.set("example.permissions", exampleG);
-            config.set("default.options.default", true);
-            config.set("default.options.prefix", "&a<&2Guest&a>&f");
-            config.set("default.permissions", defaultG);
-            config.set("owner.options.default", false);
-            config.set("owner.options.prefix", "[&4Owner&f]");
-            config.set("owner.permissions", ownerG);
-            config.set("owner.inheritance", ownerI);
-
-            save();
-        }
         config = YamlConfiguration.loadConfiguration(cFile);
-
-        if(!pFile.exists()) {
-
-            try {pFile.createNewFile();}
-
-            catch (Exception e) {e.printStackTrace();}
-
-            pConfig = YamlConfiguration.loadConfiguration(pFile);
-
-            ArrayList<String> tutPerms = new ArrayList<String>();
-            ArrayList<String> tutGroup = new ArrayList<String>();
-            tutGroup.add(getDefaultGroup());
-
-            tutPerms.add("minecraft.command.gamemode");
-            tutPerms.add("- minecraft.command.gamemode");
-            tutGroup.add("default");
-
-            pConfig.set("8d0a5acc-ec9c-4ae5-b975-3c6be56946b9.display_name", "VintageGaming");
-            pConfig.set("8d0a5acc-ec9c-4ae5-b975-3c6be56946b9.permissions", tutPerms);
-            pConfig.set("8d0a5acc-ec9c-4ae5-b975-3c6be56946b9.groups", tutGroup);
-
-
-            Psave();
-        }
         pConfig = YamlConfiguration.loadConfiguration(pFile);
 
-        //for (String groupName : config.getKeys(false)) {
-        //	groups.add(new Groups(groupName));
-        //}
     }
 
     public FileConfiguration getConfig() {
@@ -404,11 +346,14 @@ public class SettingsManager {
      *   - essentials.kill
      *   worlds:
      *     world:
-     *     - essentials.back
+     *       permissions:
+     *       - essentials.back
      *     world-nether:
-     *     - essentials.enderchest
+     *       permissions:
+     *       - essentials.enderchest
      *     world-end:
-     *     - essentials.enderchest
+     *       permissions:
+     *       - essentials.enderchest
      *
      * owner:
      *   options:

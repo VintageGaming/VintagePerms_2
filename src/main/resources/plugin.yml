@@ -1,10 +1,10 @@
 main: com.VintageGaming.VintagePerms.PermsMain
-version: 2.5
+version: 2.6
 name: VintagePerms
 author: VintageGaming
 description: Permissions Plugin like Pex and Group Manager!
 api-version: 1.21
-depend:
+softdepend:
   - Vault
 loadbefore:
   - Essentials
@@ -20,55 +20,43 @@ commands:
 permissions:
   vperms.*:
     description: God Permission for All of VintagePerms
-    default: false
+    default: op
   vperms.user.*:
     description: God Permission for User Actions in VintagePerms
-    default: false
+    default: op
   vperms.groups.*:
     description: God Permission for Group Actions in VintagePerms
-    default: false
+    default: op
   vperms.usages:
     description: Display the Different Usages for VintagePerms
-    default: false
+    default: op
   vperms.reload:
     description: Reload VintagePerms Config Files
     default: op
   vperms.user.addperm:
     description: Add Permissions to a Specific Player
-    default: false
+    default: op
   vperms.user.removeperm:
     description: Remove Permissions of a Specific Player
-    default: false
+    default: op
   vperms.user.listperms:
     description: List Permissions of a Specific Player
-    default: false
+    default: op
   vperms.groups.create:
     description: Create a New Permissions Group
-    default: false
+    default: op
   vperms.groups.remove:
     description: Delete a Permissions Group
-    default: false
+    default: op
   vperms.groups.addperm:
     description: Add Permissions to a Permissions Group
-    default: false
+    default: op
   vperms.groups.removeperm:
     description: Remove Permissions of a Permissions Group
-    default: false
+    default: op
   vperms.groups.listperms:
     description: List Permissions of a Permissions Group
-    default: false
+    default: op
   vperms.groups.setprefix:
     description: Set Prefix of a Permissions Group
-    default: false
-  vperms.nick.admin:
-    description: Permission for All Nick Related Commands of VintagePerms
-    default: false
-  vperms.nick:
-    description: Permission to User /nick Command Only
-    default: false
-  vperms.nick.realnames:
-    description: Permission to See Real Names of Nicknamed Players
-    default: false
-  vperms.nick.remotechange:
-    description: Permission to Remotely Change Someones Nickname
-    default: false
+    default: op

@@ -3,7 +3,7 @@ Next Update:
 
 Implement per-world permissions
 
-Add Online/Offline Players Menu to Users GUI
+-- Bug Can't Click in User Listing GUI
 
 
 

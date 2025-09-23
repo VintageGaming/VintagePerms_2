@@ -2,6 +2,7 @@ package com.VintageGaming.VintagePerms.Commands;
 
 import com.VintageGaming.VintagePerms.Gui.UserUI;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
@@ -39,8 +40,9 @@ public class UserCmd extends PermsCommand {
         String p = args[0].toLowerCase();
         SettingsManager manager = SettingsManager.getInstance();
 
+        //List User Info
         if (args.length < 2) {
-            if (sender.hasPermission("vperms.user.listperms") || sender.hasPermission("vperms.*") || !(sender instanceof Player)) {
+            if (CommandPermission.USER_LIST.has(sender)) {
                 if (manager.getUser(p).getPermissions().isEmpty() && manager.getUser(p).getGroups().isEmpty()) {
                     sender.sendMessage(ChatColor.YELLOW + "No permissions for " + p);
                     return;
@@ -65,7 +67,7 @@ public class UserCmd extends PermsCommand {
                 List<String> perms = manager.getUser(p).getPermissions();
 
                 for (int perm=0;perm<perms.size();perm++) {
-                    sender.sendMessage(String.valueOf(perm) + ") "+ ChatColor.YELLOW + perms.get(perm));
+                    sender.sendMessage(perm + ") "+ ChatColor.YELLOW + perms.get(perm));
                 }
 
                 return;
@@ -76,55 +78,57 @@ public class UserCmd extends PermsCommand {
 
         }
 
-        else if (args.length == 3){
-            if (args[1].equalsIgnoreCase("add")) {
-                if (sender.hasPermission("vperms.user.addperm") || sender.hasPermission("vperms.*") || !(sender instanceof Player) || sender.hasPermission("vperms.user.*")) {
 
+        String action = args[1].toLowerCase();
+
+        switch (action) {
+            case "add":
+                if (CommandPermission.USER_ADD.has(sender)) {
                     manager.getUser(p).addPermission(args[2]);
                     sender.sendMessage(ChatColor.GREEN + "Added " + args[2] + " to " + p);
-
                     return;
                 }
 
                 sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
                 return;
-
-            }
-
-            else if (args[1].equalsIgnoreCase("remove")) {
-                if (sender.hasPermission("vperms.user.removeperm") || sender.hasPermission("vperms.*") || !(sender instanceof Player) || sender.hasPermission("vperms.user.*")) {
-
+            case "remove":
+                if (CommandPermission.USER_REMOVE.has(sender)) {
                     manager.getUser(p).removePermission(args[2]);
                     sender.sendMessage(ChatColor.GREEN + "Removed " + args[2] + " from " + p);
-
-
                     return;
-
                 }
 
                 sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
                 return;
+            case "gui":
+                if (CommandPermission.GROUP_WILDCARD.has(sender) && CommandPermission.USER_WILDCARD.has(sender)) {
+                    Player player = (Player) sender;
+                    player.openInventory(UserUI.playerMaintenenceMenu(args[0]));
+                    return;
+                }
 
-            }
-            else if (args[1].equalsIgnoreCase("gui") && sender instanceof Player && (sender.hasPermission("vperms.user.*") || sender.hasPermission("vperms.*"))) {
-                Player player = (Player) sender;
-                player.openInventory(UserUI.playerMaintenenceMenu(args[0]));
-            }
-        }
-        else if (args.length == 4 && args[1].equalsIgnoreCase("group")) {
-            if (args[2].equalsIgnoreCase("add") && (sender.hasPermission("vperms.groups." + args[3].toLowerCase() + ".addplayers") || !(sender instanceof Player) || sender.hasPermission("vperms.groups.*") || sender.hasPermission("vperms.groups." + args[3].toLowerCase() + ".*") || sender.hasPermission("vperms.*"))) {
-                manager.getUser(p).addGroup(args[3], manager.getUser(p).getGroups().size());
-                sender.sendMessage(ChatColor.GREEN + "Added " + p + " to group " + args[3] + ".");
-            }
-
-            else if (args[2].equalsIgnoreCase("remove") && (sender.hasPermission("vperms.groups." + args[3].toLowerCase() + ".removeplayers") || !(sender instanceof Player) || sender.hasPermission("vperms.groups.*") || sender.hasPermission("vperms.groups." + args[3].toLowerCase() + ".*") || sender.hasPermission("vperms.*"))) {
-                manager.getUser(p).removeGroup(args[3]);
-                sender.sendMessage(ChatColor.GREEN + "Removed " + p + " from group " + args[3].toLowerCase() + ".");
-            }
-            else if (args[2].equalsIgnoreCase("set") && (sender.hasPermission("vperms.groups." + args[3].toLowerCase() + ".addplayers") || !(sender instanceof Player) || sender.hasPermission("vperms.groups.*") || sender.hasPermission("vperms.groups." + args[3].toLowerCase() + ".*") || sender.hasPermission("vperms.*"))) {
-                manager.getUser(p).setGroup(args[3]);
-                sender.sendMessage(ChatColor.GREEN + "Set " + p + " Primary Group to " + args[3] + ".");
-            }
+                sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
+                return;
+            case "group":
+                if (args[2].equalsIgnoreCase("add") && CommandPermission.GROUP_ADD_PLAYERS.hasForGroup(sender, args[3].toLowerCase())) {
+                    manager.getUser(p).addGroup(args[3], manager.getUser(p).getGroups().size());
+                    sender.sendMessage(ChatColor.GREEN + "Added " + p + " to group " + args[3] + ".");
+                    return;
+                }
+                else if (args[2].equalsIgnoreCase("remove") && CommandPermission.GROUP_REMOVE_PLAYERS.hasForGroup(sender, args[3].toLowerCase())) {
+                    manager.getUser(p).removeGroup(args[3]);
+                    sender.sendMessage(ChatColor.GREEN + "Removed " + p + " from group " + args[3].toLowerCase() + ".");
+                    return;
+                }
+                else if (args[2].equalsIgnoreCase("set") && CommandPermission.GROUP_ADD_PLAYERS.has(sender)) {
+                    manager.getUser(p).setGroup(args[3]);
+                    sender.sendMessage(ChatColor.GREEN + "Set " + p + " Primary Group to " + args[3] + ".");
+                    return;
+                }
+                sender.sendMessage(ChatColor.RED + "Insufficient Permissions!");
+                return;
+            default:
+                sender.sendMessage(ChatColor.RED + "Invalid Action!");
         }
     }
 

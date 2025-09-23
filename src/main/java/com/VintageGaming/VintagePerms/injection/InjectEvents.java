@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -37,11 +38,33 @@ public class InjectEvents implements Listener {
 
         SettingsManager.getInstance().getUser(p).inject();
     }
+
     @EventHandler
     public void onPlayerLeave(PlayerQuitEvent e) {
         SettingsManager.getInstance().getUser(e.getPlayer());
         if (groupUI.groupCreationWaitList.contains(e.getPlayer())) groupUI.groupCreationWaitList.remove(e.getPlayer());
         if (groupUI.prefixChangeWaitList.containsKey(e.getPlayer())) groupUI.prefixChangeWaitList.remove(e.getPlayer());
+    }
+
+    @EventHandler
+    public void onPlayerChangeWorld(PlayerChangedWorldEvent e) {
+        Player p = e.getPlayer();
+
+        if (SettingsManager.getInstance().getUser(p.getName()) == null) {
+            SettingsManager.getInstance().registerUser(p);
+        }
+
+        if (SettingsManager.getInstance().getUser(p).getGroups().isEmpty()) {
+
+            String group = !SettingsManager.getInstance().getDefaultGroup().isBlank() ? SettingsManager.getInstance().getDefaultGroup() : "";
+
+            //End If Player Has No Group
+            if (!group.isBlank()){
+                SettingsManager.getInstance().getUser(p).addGroup(group, 0); //checked
+            }
+        }
+
+        SettingsManager.getInstance().getUser(p).inject();
     }
 
     @EventHandler

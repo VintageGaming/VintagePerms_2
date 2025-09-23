@@ -1,0 +1,17 @@
+# ----------------------------------------------------
+# VintagePerms player.yml
+# ----------------------------------------------------
+# This file stores data for individual players.
+
+# Example player entry.
+8d0a5acc-ec9c-4ae5-b975-3c6be56946b9:
+  display_name: 'VintageGaming' # 'display_name' stores the last known name of the player.
+  permissions:
+    - 'minecraft.command.gamemode'
+    - '-essentials.fly' # A negative permission node to override a group permission.
+
+  # CRITICAL: The first group in this list is their PRIMARY group.
+  # The primary group determines which prefix they get.
+  groups:
+    - 'owner'
+    - 'default'
